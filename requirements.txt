@@ -1,14 +1,8 @@
-streamlit
-langchain
-langchain-core
-langchain-openai
-tiktoken
-# pysqlite3는 ChromaDB용이므로 제거하거나 주석 처리
-# __import__('pysqlite3') 라인을 app.py에서 제거할 것이므로 필요 없습니다.
-# pysqlite3 
-
-# FAISS를 설치합니다. CPU 버전으로 충분합니다.
-faiss-cpu
-
-# google-protobuf는 LangChain 다른 부분에서 필요할 수 있으니 유지하는 것이 안전합니다.
-google-protobuf==3.20.0
+streamlit==1.36.0           # Streamlit 버전도 고정
+langchain==0.1.18           # LangChain 메인 버전 고정
+langchain-core==0.1.50      # LangChain Core 버전 고정
+langchain-openai==0.1.6     # LangChain OpenAI 버전 고정
+faiss-cpu==1.7.4            # FAISS 버전 고정
+tiktoken==0.7.0             # Tiktoken 버전 고정
+pypdf==4.2.0                # PDF 로더 버전 고정 (PyPDFLoader 사용 시)
+google-protobuf==3.20.0     # Protobuf 버전 고정
