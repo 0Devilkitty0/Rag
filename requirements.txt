@@ -1,5 +1,5 @@
 streamlit==1.36.0           # Streamlit 버전도 고정
-langchain==0.1.18           # LangChain 메인 버전 고정
+langchain==0.1.19           # LangChain 메인 버전 고정
 langchain-core==0.1.50      # LangChain Core 버전 고정
 langchain-openai==0.1.6     # LangChain OpenAI 버전 고정
 faiss-cpu==1.7.4            # FAISS 버전 고정
