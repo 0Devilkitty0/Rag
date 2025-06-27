@@ -2,7 +2,9 @@ import os
 import streamlit as st
 import tempfile
 
-from langchain.vectorstores import Chroma
+# 기존 Chroma 관련 임포트 변경
+# from langchain.vectorstores import Chroma # 제거
+from langchain_community.vectorstores import FAISS # FAISS 임포트
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
@@ -16,12 +18,14 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 # from langchain.core.output_parsers import StrOutputParser
 
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# pysqlite3 관련 코드 제거
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
+# langchain_chroma 임포트 제거
+# from langchain_chroma import Chroma 
 
-from langchain_chroma import Chroma
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 #cache_resource로 한번 실행한 결과 캐싱해두기
@@ -30,35 +34,37 @@ def load_and_split_pdf(file_path):
     loader = PyPDFLoader(file_path)
     return loader.load_and_split()
 
-#텍스트 청크들을 Chroma 안에 임베딩 벡터로 저장
+# 텍스트 청크들을 FAISS 안에 임베딩 벡터로 저장 (Chroma 대신 FAISS 사용)
 @st.cache_resource
 def create_vector_store(_docs):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     split_docs = text_splitter.split_documents(_docs)
-    persist_directory = "./chroma_db"
-    vectorstore = Chroma.from_documents(
+    # persist_directory는 FAISS에서는 일반적으로 사용되지 않습니다.
+    # FAISS는 인메모리(in-memory)로 동작하며, 저장하려면 FAISS.save_local()을 사용해야 합니다.
+    # 여기서는 cache_resource 덕분에 메모리에 유지되므로 별도 저장은 필요 없습니다.
+    vectorstore = FAISS.from_documents(
         split_docs, 
-        OpenAIEmbeddings(model='text-embedding-3-small'),
-        persist_directory=persist_directory
+        OpenAIEmbeddings(model='text-embedding-3-small')
     )
     return vectorstore
 
-#만약 기존에 저장해둔 ChromaDB가 있는 경우, 이를 로드
+# FAISS는 별도 로드 로직 필요 없음 (cache_resource에 의해 관리)
 @st.cache_resource
 def get_vectorstore(_docs):
-    persist_directory = "./chroma_db"
-    if os.path.exists(persist_directory):
-        return Chroma(
-            persist_directory=persist_directory,
-            embedding_function=OpenAIEmbeddings(model='text-embedding-3-small')
-        )
-    else:
-        return create_vector_store(_docs)
+    # FAISS는 persist_directory 개념을 직접 사용하지 않으므로,
+    # 항상 create_vector_store(_docs)를 호출하도록 변경합니다.
+    # @st.cache_resource 덕분에 실제로는 한 번만 실행됩니다.
+    return create_vector_store(_docs)
     
 # PDF 문서 로드-벡터 DB 저장-검색기-히스토리 모두 합친 Chain 구축
 @st.cache_resource
 def initialize_components(selected_model):
-    file_path = r"data/대한민국헌법(헌법)(제00010호)(19880225).pdf"
+    file_path = "data/대한민국헌법(헌법)(제00010호)(19880225).pdf"
+    
+    if not os.path.exists(file_path):
+        st.error(f"Error: PDF file not found at {file_path}. Please ensure it's in the 'data' folder in your GitHub repository.")
+        st.stop() 
+
     pages = load_and_split_pdf(file_path)
     vectorstore = get_vectorstore(pages)
     retriever = vectorstore.as_retriever()
@@ -94,8 +100,8 @@ def initialize_components(selected_model):
 
     llm = ChatOpenAI(model=selected_model)
     history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
-    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+    Youtube_chain = create_stuff_documents_chain(llm, qa_prompt)
+    rag_chain = create_retrieval_chain(history_aware_retriever, Youtube_chain)
     return rag_chain
 
 # Streamlit UI
@@ -115,16 +121,16 @@ conversational_rag_chain = RunnableWithMessageHistory(
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "assistant", 
-                                     "content": "헌법에 대해 무엇이든 물어보세요!"}]
+                                     "content": "헌법에 대해 무엇이든 물어보세요! ⚖️"}]
 
 for msg in chat_history.messages:
     st.chat_message(msg.type).write(msg.content)
 
 
-if prompt_message := st.chat_input("Your question"):
+if prompt_message := st.chat_input("궁금한 점을 입력해주세요..."):
     st.chat_message("human").write(prompt_message)
     with st.chat_message("ai"):
-        with st.spinner("Thinking..."):
+        with st.spinner("생각 중입니다... 🧐"):
             config = {"configurable": {"session_id": "any"}}
             response = conversational_rag_chain.invoke(
                 {"input": prompt_message},
@@ -132,6 +138,14 @@ if prompt_message := st.chat_input("Your question"):
             
             answer = response['answer']
             st.write(answer)
-            with st.expander("참고 문서 확인"):
-                for doc in response['context']:
-                    st.markdown(doc.metadata['source'], help=doc.page_content)
+            with st.expander("참고 문서 확인 📄"):
+                if 'context' in response and response['context']:
+                    for i, doc in enumerate(response['context']):
+                        st.markdown(f"**문서 {i+1}:**")
+                        source_info = doc.metadata.get('source', '출처 알 수 없음')
+                        page_info = doc.metadata.get('page', '페이지 정보 없음')
+                        st.markdown(f"**출처:** {source_info}, **페이지:** {page_info}")
+                        st.write(doc.page_content)
+                        st.markdown("---")
+                else:
+                    st.info("관련 문서를 찾을 수 없습니다.")
