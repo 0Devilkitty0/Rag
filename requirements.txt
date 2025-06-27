@@ -5,4 +5,4 @@ langchain-openai==0.1.6     # LangChain OpenAI 버전 고정
 faiss-cpu==1.7.4            # FAISS 버전 고정
 tiktoken==0.7.0             # Tiktoken 버전 고정
 pypdf==4.2.0                # PDF 로더 버전 고정 (PyPDFLoader 사용 시)
-google-protobuf==3.20.0     # Protobuf 버전 고정
+google-protobuf     # Protobuf 버전 고정
