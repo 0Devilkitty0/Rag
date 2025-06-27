@@ -1,8 +1,9 @@
+# (이전 FAISS 버전 app.py 코드와 동일하게 유지)
 import os
 import streamlit as st
-import tempfile
+# import tempfile # 현재 코드에서 직접 사용되지 않으므로 제거해도 무방합니다.
 
-# 기존 Chroma 관련 임포트 변경
+# LangChain 및 FAISS 임포트
 # from langchain.vectorstores import Chroma # 제거
 from langchain_community.vectorstores import FAISS # FAISS 임포트
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -14,9 +15,7 @@ from langchain_community.chat_message_histories.streamlit import StreamlitChatMe
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables.history import RunnableWithMessageHistory
-# from langchain.core.output_parsers import StrOutputParser
+# from langchain_core.output_parsers import StrOutputParser # 주석 처리된 상태로 유지
 
 # pysqlite3 관련 코드 제거
 # __import__('pysqlite3')
@@ -34,14 +33,11 @@ def load_and_split_pdf(file_path):
     loader = PyPDFLoader(file_path)
     return loader.load_and_split()
 
-# 텍스트 청크들을 FAISS 안에 임베딩 벡터로 저장 (Chroma 대신 FAISS 사용)
+#텍스트 청크들을 FAISS 안에 임베딩 벡터로 저장
 @st.cache_resource
 def create_vector_store(_docs):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     split_docs = text_splitter.split_documents(_docs)
-    # persist_directory는 FAISS에서는 일반적으로 사용되지 않습니다.
-    # FAISS는 인메모리(in-memory)로 동작하며, 저장하려면 FAISS.save_local()을 사용해야 합니다.
-    # 여기서는 cache_resource 덕분에 메모리에 유지되므로 별도 저장은 필요 없습니다.
     vectorstore = FAISS.from_documents(
         split_docs, 
         OpenAIEmbeddings(model='text-embedding-3-small')
@@ -51,9 +47,6 @@ def create_vector_store(_docs):
 # FAISS는 별도 로드 로직 필요 없음 (cache_resource에 의해 관리)
 @st.cache_resource
 def get_vectorstore(_docs):
-    # FAISS는 persist_directory 개념을 직접 사용하지 않으므로,
-    # 항상 create_vector_store(_docs)를 호출하도록 변경합니다.
-    # @st.cache_resource 덕분에 실제로는 한 번만 실행됩니다.
     return create_vector_store(_docs)
     
 # PDF 문서 로드-벡터 DB 저장-검색기-히스토리 모두 합친 Chain 구축
