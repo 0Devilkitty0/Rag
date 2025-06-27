@@ -5,3 +5,4 @@ langchain-openai     # LangChain OpenAI 버전 고정
 faiss-cpu            # FAISS 버전 고정
 tiktoken             # Tiktoken 버전 고정
 pypdf                # PDF 로더 버전 고정 (PyPDFLoader 사용 시)
+langchain-community
