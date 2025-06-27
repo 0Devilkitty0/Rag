@@ -7,5 +7,4 @@ langchain-chroma
 pysqlite3-binary
 pypdf
 langchain-text-splitters
-tiktoken
 google-protobuf==3.20.0 
