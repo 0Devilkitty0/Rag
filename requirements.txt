@@ -1,14 +1,14 @@
 streamlit
 langchain
 langchain-core
-langchain-chroma==0.1.1 # 이 버전을 사용해보세요.
 langchain-openai
-pysqlite3
 tiktoken
-# opentelemetry 관련 종속성 버전을 명시하여 충돌 방지
-opentelemetry-api==1.12.0
-opentelemetry-sdk==1.12.0
-opentelemetry-exporter-otlp-proto-grpc==1.12.0
+# pysqlite3는 ChromaDB용이므로 제거하거나 주석 처리
+# __import__('pysqlite3') 라인을 app.py에서 제거할 것이므로 필요 없습니다.
+# pysqlite3 
+
+# FAISS를 설치합니다. CPU 버전으로 충분합니다.
+faiss-cpu
+
+# google-protobuf는 LangChain 다른 부분에서 필요할 수 있으니 유지하는 것이 안전합니다.
 google-protobuf==3.20.0
-# 만약 위의 버전으로도 안된다면 chromadb 자체를 조금 더 낮은 0.4.18 같은 것으로 시도해볼 수도 있습니다.
-# chromadb==0.4.18
